@@ -12,13 +12,14 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 /**
  *
  * @author Andrés Córdoba
  *
  */
-public class ListarDialog extends JDialog implements ActionListener {
+public class BuscarDialog extends JDialog implements ActionListener {
 
     Empresa empresa;
     AccesoTrabajador accesoTrabajador;
@@ -27,25 +28,38 @@ public class ListarDialog extends JDialog implements ActionListener {
     DefaultTableModel modeloTabla;
     TableRowSorter<DefaultTableModel> ordenador;
 
-    JButton modificar;
+    JTextField campoBuscar;
+    JButton buscar;
+    JButton limpiar;
     JButton cerrar;
 
-    boolean permitirModificar;
-
-    public ListarDialog(Empresa empresa) {
-        this(empresa, false);
-    }
-
-    public ListarDialog(Empresa empresa, boolean permitirModificar) {
+    public BuscarDialog(Empresa empresa) {
         this.empresa = empresa;
-        this.permitirModificar = permitirModificar;
         this.accesoTrabajador = new AccesoTrabajador();
 
         setResizable(false);
-        setTitle("Listado Trabajadores");
+        setTitle("Buscar Trabajador");
         setSize(900, 700);
         setLayout(new BorderLayout());
         setLocationRelativeTo(null);
+
+        JPanel panelBuscar = new JPanel(new FlowLayout());
+
+        panelBuscar.add(new JLabel("Buscar:"));
+
+        campoBuscar = new JTextField(25);
+        campoBuscar.addActionListener(this);
+        panelBuscar.add(campoBuscar);
+
+        buscar = new JButton("Buscar");
+        buscar.addActionListener(this);
+        panelBuscar.add(buscar);
+
+        limpiar = new JButton("Limpiar");
+        limpiar.addActionListener(this);
+        panelBuscar.add(limpiar);
+
+        add(panelBuscar, BorderLayout.NORTH);
 
         String[] columnas = {
                 "Identificador",
@@ -81,12 +95,6 @@ public class ListarDialog extends JDialog implements ActionListener {
         add(jsp, BorderLayout.CENTER);
 
         JPanel panelBotones = new JPanel(new FlowLayout());
-
-        if (permitirModificar) {
-            modificar = new JButton("Modificar seleccionado");
-            modificar.addActionListener(this);
-            panelBotones.add(modificar);
-        }
 
         cerrar = new JButton("Cerrar");
         cerrar.addActionListener(this);
@@ -130,55 +138,24 @@ public class ListarDialog extends JDialog implements ActionListener {
         }
     }
 
-    private void modificarTrabajadorSeleccionado() {
-        int filaSeleccionada = tabla.getSelectedRow();
+    private void filtrarTabla() {
+        String texto = campoBuscar.getText().trim();
 
-        if (filaSeleccionada == -1) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Selecciona un trabajador de la tabla.",
-                    "Modificar trabajador",
-                    JOptionPane.ERROR_MESSAGE
-            );
-            return;
-        }
-
-        int filaModelo = tabla.convertRowIndexToModel(filaSeleccionada);
-        int identificador = Integer.parseInt(modeloTabla.getValueAt(filaModelo, 0).toString());
-
-        try {
-            Trabajador trabajador = accesoTrabajador.buscar(identificador);
-
-            if (trabajador == null) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "No se ha encontrado el trabajador en la base de datos.",
-                        "Modificar trabajador",
-                        JOptionPane.ERROR_MESSAGE
-                );
-                return;
-            }
-
-            ModificarDialog modificarDialog = new ModificarDialog(this, trabajador);
-
-            if (modificarDialog.isModificado()) {
-                cargarDatos();
-            }
-
-        } catch (BDException e) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Error al buscar el trabajador:\n" + e.getMessage(),
-                    "Error BD",
-                    JOptionPane.ERROR_MESSAGE
-            );
+        if (texto.equals("")) {
+            ordenador.setRowFilter(null);
+        } else {
+            ordenador.setRowFilter(RowFilter.regexFilter("(?i)" + Pattern.quote(texto)));
         }
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (permitirModificar && e.getSource() == modificar) {
-            modificarTrabajadorSeleccionado();
+        if (e.getSource() == buscar || e.getSource() == campoBuscar) {
+            filtrarTabla();
+
+        } else if (e.getSource() == limpiar) {
+            campoBuscar.setText("");
+            ordenador.setRowFilter(null);
 
         } else if (e.getSource() == cerrar) {
             dispose();

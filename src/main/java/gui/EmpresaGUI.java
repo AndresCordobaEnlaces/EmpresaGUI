@@ -3,6 +3,7 @@ package gui;
 import dao.AccesoTrabajador;
 import dialogs.AltaDialog;
 import dialogs.BajaDialog;
+import dialogs.BuscarDialog;
 import dialogs.ListarDialog;
 import exceptions.BDException;
 import ficheros.FicheroDatos;
@@ -18,6 +19,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
+/**
+ *
+ * @author Andrés Córdoba
+ *
+ */
 public class EmpresaGUI extends JFrame implements ActionListener {
 
     Empresa empresa;
@@ -115,172 +121,16 @@ public class EmpresaGUI extends JFrame implements ActionListener {
             new BajaDialog(empresa);
 
         } else if (e.getSource() == modificaTrabajador) {
-            modificarTrabajador();
+            new ListarDialog(empresa, true);
 
         } else if (e.getSource() == buscaTrabajador) {
-            buscarTrabajador();
+            new BuscarDialog(empresa);
 
         } else if (e.getSource() == listarTrabajadores) {
             new ListarDialog(empresa);
 
         } else if (e.getSource() == salir) {
             System.exit(0);
-        }
-    }
-
-    private void buscarTrabajador() {
-        try {
-            String textoId = JOptionPane.showInputDialog(
-                    this,
-                    "Introduce el identificador del trabajador:"
-            );
-
-            if (textoId == null || textoId.trim().equals("")) {
-                return;
-            }
-
-            int identificador = Integer.parseInt(textoId);
-
-            Trabajador trabajador = accesoTrabajador.buscar(identificador);
-
-            if (trabajador == null) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "No existe ningún trabajador con ese identificador.",
-                        "Buscar trabajador",
-                        JOptionPane.ERROR_MESSAGE
-                );
-            } else {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Identificador: " + trabajador.getIdentificador() + "\n" +
-                                "DNI: " + trabajador.getDni() + "\n" +
-                                "Nombre: " + trabajador.getNombre() + "\n" +
-                                "Apellidos: " + trabajador.getApellidos() + "\n" +
-                                "Dirección: " + trabajador.getDireccion() + "\n" +
-                                "Teléfono: " + trabajador.getTelefono() + "\n" +
-                                "Puesto: " + trabajador.getPuesto(),
-                        "Trabajador encontrado",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
-            }
-
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "El identificador debe ser un número entero.",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
-
-        } catch (BDException e) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Error al buscar el trabajador:\n" + e.getMessage(),
-                    "Error BD",
-                    JOptionPane.ERROR_MESSAGE
-            );
-        }
-    }
-
-    private void modificarTrabajador() {
-        try {
-            String textoId = JOptionPane.showInputDialog(
-                    this,
-                    "Introduce el identificador del trabajador que quieres modificar:"
-            );
-
-            if (textoId == null || textoId.trim().equals("")) {
-                return;
-            }
-
-            int identificador = Integer.parseInt(textoId);
-
-            Trabajador trabajador = accesoTrabajador.buscar(identificador);
-
-            if (trabajador == null) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "No existe ningún trabajador con ese identificador.",
-                        "Modificar trabajador",
-                        JOptionPane.ERROR_MESSAGE
-                );
-                return;
-            }
-
-            String dni = JOptionPane.showInputDialog(this, "DNI:", trabajador.getDni());
-            if (dni == null) {
-                return;
-            }
-
-            String nombre = JOptionPane.showInputDialog(this, "Nombre:", trabajador.getNombre());
-            if (nombre == null) {
-                return;
-            }
-
-            String apellidos = JOptionPane.showInputDialog(this, "Apellidos:", trabajador.getApellidos());
-            if (apellidos == null) {
-                return;
-            }
-
-            String direccion = JOptionPane.showInputDialog(this, "Dirección:", trabajador.getDireccion());
-            if (direccion == null) {
-                return;
-            }
-
-            String telefono = JOptionPane.showInputDialog(this, "Teléfono:", trabajador.getTelefono());
-            if (telefono == null) {
-                return;
-            }
-
-            String puesto = JOptionPane.showInputDialog(this, "Puesto:", trabajador.getPuesto());
-            if (puesto == null) {
-                return;
-            }
-
-            Trabajador trabajadorModificado = new Trabajador(
-                    identificador,
-                    dni,
-                    nombre,
-                    apellidos,
-                    direccion,
-                    telefono,
-                    puesto
-            );
-
-            boolean modificado = accesoTrabajador.actualizar(trabajadorModificado);
-
-            if (modificado) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Trabajador modificado correctamente.",
-                        "Modificar trabajador",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
-            } else {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "No se ha podido modificar el trabajador.",
-                        "Modificar trabajador",
-                        JOptionPane.ERROR_MESSAGE
-                );
-            }
-
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "El identificador debe ser un número entero.",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
-
-        } catch (BDException e) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Error al modificar el trabajador:\n" + e.getMessage(),
-                    "Error BD",
-                    JOptionPane.ERROR_MESSAGE
-            );
         }
     }
 
