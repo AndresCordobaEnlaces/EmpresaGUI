@@ -28,6 +28,7 @@ public class BuscarDialog extends JDialog implements ActionListener {
     DefaultTableModel modeloTabla;
     TableRowSorter<DefaultTableModel> ordenador;
 
+    JComboBox<String> tipoBusqueda;
     JTextField campoBuscar;
     JButton buscar;
     JButton limpiar;
@@ -45,7 +46,13 @@ public class BuscarDialog extends JDialog implements ActionListener {
 
         JPanel panelBuscar = new JPanel(new FlowLayout());
 
-        panelBuscar.add(new JLabel("Buscar:"));
+        panelBuscar.add(new JLabel("Buscar por:"));
+
+        tipoBusqueda = new JComboBox<>();
+        tipoBusqueda.addItem("Todos los campos");
+        tipoBusqueda.addItem("Identificador");
+        tipoBusqueda.addItem("DNI");
+        panelBuscar.add(tipoBusqueda);
 
         campoBuscar = new JTextField(25);
         campoBuscar.addActionListener(this);
@@ -104,28 +111,19 @@ public class BuscarDialog extends JDialog implements ActionListener {
 
         cargarDatos();
 
-        setVisible(true);
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        setVisible(true);
     }
 
     private void cargarDatos() {
         modeloTabla.setRowCount(0);
+        ordenador.setRowFilter(null);
 
         try {
             ArrayList<Trabajador> trabajadores = accesoTrabajador.listar();
 
             for (Trabajador trabajador : trabajadores) {
-                Object[] fila = {
-                        trabajador.getIdentificador(),
-                        trabajador.getDni(),
-                        trabajador.getNombre(),
-                        trabajador.getApellidos(),
-                        trabajador.getDireccion(),
-                        trabajador.getTelefono(),
-                        trabajador.getPuesto()
-                };
-
-                modeloTabla.addRow(fila);
+                anadirTrabajadorTabla(trabajador);
             }
 
         } catch (BDException e) {
@@ -138,24 +136,106 @@ public class BuscarDialog extends JDialog implements ActionListener {
         }
     }
 
-    private void filtrarTabla() {
+    private void buscarTrabajador() {
+        String opcion = tipoBusqueda.getSelectedItem().toString();
         String texto = campoBuscar.getText().trim();
 
+        if (opcion.equals("Todos los campos")) {
+            buscarEnTodosLosCampos(texto);
+            return;
+        }
+
         if (texto.equals("")) {
-            ordenador.setRowFilter(null);
-        } else {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Introduce un valor para buscar.",
+                    "Buscar trabajador",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
+
+        modeloTabla.setRowCount(0);
+        ordenador.setRowFilter(null);
+
+        try {
+            Trabajador trabajador = null;
+
+            if (opcion.equals("Identificador")) {
+                try {
+                    int identificador = Integer.parseInt(texto);
+                    trabajador = accesoTrabajador.buscar(identificador);
+
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "El identificador debe ser un número.",
+                            "Buscar trabajador",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                    return;
+                }
+
+            } else if (opcion.equals("DNI")) {
+                trabajador = accesoTrabajador.buscarPorDni(texto);
+            }
+
+            if (trabajador == null) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "No se ha encontrado ningún trabajador.",
+                        "Buscar trabajador",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+            } else {
+                anadirTrabajadorTabla(trabajador);
+            }
+
+        } catch (BDException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Error al buscar el trabajador:\n" + e.getMessage(),
+                    "Error BD",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
+    private void buscarEnTodosLosCampos(String texto) {
+        cargarDatos();
+
+        if (!texto.equals("")) {
             ordenador.setRowFilter(RowFilter.regexFilter("(?i)" + Pattern.quote(texto)));
         }
+    }
+
+    private void anadirTrabajadorTabla(Trabajador trabajador) {
+        Object[] fila = {
+                trabajador.getIdentificador(),
+                trabajador.getDni(),
+                trabajador.getNombre(),
+                trabajador.getApellidos(),
+                trabajador.getDireccion(),
+                trabajador.getTelefono(),
+                trabajador.getPuesto()
+        };
+
+        modeloTabla.addRow(fila);
+    }
+
+    private void limpiarBusqueda() {
+        campoBuscar.setText("");
+        tipoBusqueda.setSelectedIndex(0);
+        cargarDatos();
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == buscar || e.getSource() == campoBuscar) {
-            filtrarTabla();
+            buscarTrabajador();
 
         } else if (e.getSource() == limpiar) {
-            campoBuscar.setText("");
-            ordenador.setRowFilter(null);
+            limpiarBusqueda();
 
         } else if (e.getSource() == cerrar) {
             dispose();
